@@ -1,3 +1,5 @@
+![language](https://img.shields.io/badge/Python-v3.11-icons?logo=python&color=3776ab)
+
 This repository implements the core modules for the bidirectional enrichment of OpenStreetMap (OSM) and CityGML data for cycling safety assessment. The goal is to map match and accomplish an attribute transfer between OSM and CityGML as described in the accompanying paper. After the attribute transfer, a regression model is applied using two sets of training data to calculate dual cycling safety scores: one that incorporates width information and one that omits it. These scores are appended to the enriched network. The workflow includes:
 1. **Road Network Creator:**  
    *Input:* OSM nodes and edges layers (`road_network_layer_path`, `nodes_layer_path`)  
@@ -153,3 +155,18 @@ Click on any tile feature of the bicycle infrastructure to view its properties i
 | `lanes`                   | Number of lanes                              |
 | `parking`                 | Whether parking is present (true/false)      |
 | `opendrive_road_junction` | Whether part of a road junction (true/false) |
+
+
+### <u> Cite </u>
+
+<pre><code>@Article{bidirecEnrichCycling,
+AUTHOR = {},
+TITLE = {},
+JOURNAL = {},
+YEAR = {},
+PAGES = {x--x},
+DOI = {}
+}</code></pre>
+
+### <u> Troubleshooting </u>
+In case the code is not working for you or you experience some code related problems, please consider opening an issue.
