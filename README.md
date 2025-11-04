@@ -60,14 +60,10 @@ It is recommended to use a virtual environment.
 
 ### Setup Instructions
 
-The github link is currently unavailable due to the double-blind rule.
-You can get the entire project from the figshare link: https://figshare.com/s/323766fd1f84c797cf02
-
-
 1. **Clone the Repository:**
    ```bash
-   git clone https://github.com/username/hmm_osm_citygml_matching.git
-   cd hmm_osm_citygml_matching
+   git clone https://github.com/hcu-cml/bidirectionalEnrichment-OSM-CityGML-cycling.git
+   cd bidirectionalEnrichment-OSM-CityGML-cycling/
 
 2.    Create and Activate a Virtual Environment (optional but recommended):
 
@@ -93,7 +89,7 @@ python main.py
 Final output:
 - `enriched_network_with_dual_scores.gpkg`: GeoPackage containing the final scored cycling network.
 
-## citygml-3d-visualization-main
+## cesium_3d_visualization
 
 This part visualizes enriched CityGML data, combining 3D city models with bicycle infrastructure scores in an interactive CesiumJS viewer. The goal is to enable intuitive inspection of spatial safety information through web-based 3D visualization.
 
@@ -111,11 +107,8 @@ This part visualizes enriched CityGML data, combining 3D city models with bicycl
 
 ## Installation
 
-Clone the repository and install dependencies:
-
 ```bash
-git clone https://github.com/username/enriched_citygml_cesium.git
-cd enriched_citygml_cesium
+cd cesium_3d_visualisation
 npm install
 ```
 

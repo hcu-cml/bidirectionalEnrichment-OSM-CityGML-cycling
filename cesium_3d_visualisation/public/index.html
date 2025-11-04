@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <!-- Cesium library and stylesheet -->
+    <script src="https://cesium.com/downloads/cesiumjs/releases/1.68/Build/Cesium/Cesium.js"></script>
+    <link href="https://cesium.com/downloads/cesiumjs/releases/1.68/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <title>Enriched CityGML in Cesium</title>
+</head>
+<body style="margin:0; padding:0;">
+    <!-- Container for the Cesium viewer -->
+    <div id="cesiumContainer" style="width: 100%; height: 100%;"></div>
+
+    <script>
+        // Replace this token with your own Cesium Ion token if necessary
+        Cesium.Ion.defaultAccessToken = '';
+
+        // -----------------------------------------------------------------------------
+        // 1. Initialize the Cesium Viewer
+        // -----------------------------------------------------------------------------
+        var viewer = new Cesium.Viewer('cesiumContainer', {
+            imageryProvider: new Cesium.UrlTemplateImageryProvider({
+                url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+                subdomains: ['a', 'b', 'c', 'd'],
+                credit: '© OpenStreetMap contributors, © CARTO'
+            }),
+            baseLayerPicker: false,
+            // We explicitly set terrain to undefined to avoid the default Cesium World Terrain
+            terrainProvider: undefined,
+            infoBox: true  // Ensure the InfoBox widget is enabled
+        });
+
+        // -----------------------------------------------------------------------------
+        // 2. (Optional) Add custom terrain provider
+        // -----------------------------------------------------------------------------
+        var terrainProvider = new Cesium.CesiumTerrainProvider({
+            url: 'https://daten-hamburg.de/gdi3d/datasource-data/Gelaende/'
+        });
+        // Apply the custom terrain provider
+        viewer.terrainProvider = terrainProvider;
+
+        // -----------------------------------------------------------------------------
+        // 3. Adjust scene lighting (disable default globe lighting; add directional light)
+        // -----------------------------------------------------------------------------
+        viewer.scene.globe.enableLighting = false;
+        viewer.scene.light = new Cesium.DirectionalLight({
+            direction: new Cesium.Cartesian3(0, 0, -1) // Light shining downward
+        });
+
+        // -----------------------------------------------------------------------------
+        // 4. Helper Function: Offsets a tileset by a given height
+        // -----------------------------------------------------------------------------
+        function applyHeightOffset(tileset, heightOffset) {
+            // Get the bounding sphere of the tileset to determine its center
+            var boundingSphere = tileset.boundingSphere;
+            var cartographic = Cesium.Cartographic.fromCartesian(boundingSphere.center);
+
+            // Calculate the position on the surface (original) and the offset position
+            var surfacePosition = Cesium.Cartesian3.fromRadians(
+                cartographic.longitude,
+                cartographic.latitude,
+                cartographic.height
+            );
+            var offsetPosition = Cesium.Cartesian3.fromRadians(
+                cartographic.longitude,
+                cartographic.latitude,
+                cartographic.height + heightOffset
+            );
+
+            // Compute the translation vector and apply it as a model matrix
+            var translation = Cesium.Cartesian3.subtract(offsetPosition, surfacePosition, new Cesium.Cartesian3());
+            tileset.modelMatrix = Cesium.Matrix4.fromTranslation(translation);
+        }
+
+        // -----------------------------------------------------------------------------
+        // 5. Add a feature-picking event handler for the scene
+        //    (Here, we only do it once and it works for all tilesets)
+        // -----------------------------------------------------------------------------
+        var handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+        handler.setInputAction(function (movement) {
+            var pickedFeature = viewer.scene.pick(movement.position);
+
+            if (Cesium.defined(pickedFeature)) {
+                // A mapping from raw attribute keys to friendly display labels
+                var propertiesMapping = [
+                    { key: "maxspeed",      label: "Speed in km/h" },
+                    { key: "lanes",      label: "Number of lanes" },
+                    { key: "parking",      label: "Car parking space next to cycleway" },
+                    { key: "opendrive_road_junction", label: "Is part of a junction" },
+                    { key: "_width",              label: "Bicycle lane width" },
+                    { key: "_slope_percent",      label: "Slope in %" },
+                    { key: "score_with_width",               label: "Safety Score" }
+                ];
+
+                var propertyTable = '<table style="width:100%">';
+                
+                propertiesMapping.forEach(function(mapping) {
+                    var value = pickedFeature.getProperty(mapping.key);
+
+                    // For the junction attribute, show "true" if the data exists (non-null)
+                    if (mapping.key === "opendrive_road_junction") {
+                        value = Cesium.defined(value) && value !== null ? "true" : "false";
+                    }
+
+                    if (mapping.key === "parking") {
+                        value = Cesium.defined(value) && value !== null ? "true" : "false";
+                    }
+
+                    // Round numeric values to two decimal places
+                    if (typeof value === 'number') {
+                        value = value.toFixed(2);
+                    } else if (typeof value === 'string' && !isNaN(parseFloat(value))) {
+                        value = parseFloat(value).toFixed(2);
+                    }
+
+                    // Only display if the attribute exists
+                    if (Cesium.defined(value)) {
+                        propertyTable += '<tr><td><b>' + mapping.label + '</b></td><td>' + value + '</td></tr>';
+                    }
+                });
+                propertyTable += '</table>';
+
+                // Display this table in the InfoBox by setting the viewer's selected entity
+                viewer.selectedEntity = new Cesium.Entity({
+                    name: 'Selected Feature',
+                    description: propertyTable
+                });
+            } else {
+                viewer.selectedEntity = undefined;
+            }
+        }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+
+        // -----------------------------------------------------------------------------
+        // 6. First tileset: "tiles_city"
+        // -----------------------------------------------------------------------------
+        var tileset = viewer.scene.primitives.add(new Cesium.Cesium3DTileset({
+            url: "tiles_city/tileset.json"
+        }));
+        // Control how detailed the tileset should be: lower => more detail, higher => more performance
+        tileset.maximumScreenSpaceError = 2.0;
+
+        // Once ready, fly to this tileset and set styling, offset, etc.
+        tileset.readyPromise.then(function (loadedTileset) {
+            viewer.flyTo(loadedTileset);
+
+            // Apply a dark gray color to the entire first tileset
+            loadedTileset.style = new Cesium.Cesium3DTileStyle({
+                color: "color('#A9A9A9', 1.0)"
+            });
+
+            // Slightly raise the tileset above the ground if necessary
+            applyHeightOffset(loadedTileset, 1.0);
+
+            // Turn off wireframe mode for better final appearance
+            loadedTileset.debugWireframe = false;
+
+        }).otherwise(function (error) {
+            console.error('An error occurred with tiles_city:', error);
+        });
+
+        // -----------------------------------------------------------------------------
+        // 7. Second tileset: "tiles_cycling"
+        // -----------------------------------------------------------------------------
+        var tileset2 = viewer.scene.primitives.add(new Cesium.Cesium3DTileset({
+            url: "cycle_area_new_score/tileset.json"
+        }));
+        tileset2.maximumScreenSpaceError = 1.0;
+
+        tileset2.readyPromise.then(function (loadedTileset2) {
+            viewer.flyTo(loadedTileset2);
+
+            // Apply a slight height offset
+            applyHeightOffset(loadedTileset2, 1.1);
+
+            // Style the second tileset by color-coding safety scores
+            loadedTileset2.style = new Cesium.Cesium3DTileStyle({
+                color: {
+                    conditions: [
+                    ["Boolean(${score_with_width}) && ${score_with_width} >= 0.0 && ${score_with_width} <= 0.2", "color('darkgreen', 1.0)"],
+                        ["Boolean(${score_with_width}) && ${score_with_width} > 0.2 && ${score_with_width} <= 0.4", "color('green', 1.0)"],
+                        ["Boolean(${score_with_width}) && ${score_with_width} > 0.4 && ${score_with_width} <= 0.6", "color('#FFFF33', 1.0)"],
+                        ["Boolean(${score_with_width}) && ${score_with_width} > 0.6 && ${score_with_width} <= 0.8", "color('orange', 1.0)"],
+                        ["Boolean(${score_with_width}) && ${score_with_width} > 0.8 && ${score_with_width} <= 1", "color('red', 1.0)"],
+                        // Fallback color if there's no valid score_with_width
+                        ["true", "color('lightgray', 1.0)"]
+                    ]
+                }
+            });
+
+            // Disable wireframe mode for the final look
+            loadedTileset2.debugWireframe = false;
+
+        }).otherwise(function (error) {
+            console.error('An error occurred with tiles_cycling:', error);
+        });
+
+        // -----------------------------------------------------------------------------
+        // 8. Third tileset (LoD3_untexturiert_Area1)
+        // -----------------------------------------------------------------------------
+        var tileset3 = viewer.scene.primitives.add(new Cesium.Cesium3DTileset({
+            url: "https://daten-hamburg.de/gdi3d/datasource-data/LoD3_untexturiert_Area1/tileset.json"
+        }));
+        tileset3.maximumScreenSpaceError = 2.0;
+
+        tileset3.readyPromise.then(function (loadedTileset3) {
+            viewer.flyTo(loadedTileset3);
+
+            // Height offset if needed; here set to 0
+            applyHeightOffset(loadedTileset3, 0.0);
+
+            loadedTileset3.debugWireframe = false;
+
+        }).otherwise(function (error) {
+            console.error('An error occurred with LoD3_untexturiert_Area1:', error);
+        });
+
+        // -----------------------------------------------------------------------------
+        // 9. Fourth tileset (LoD3_untexturiert_Area4)
+        // -----------------------------------------------------------------------------
+        var tileset4 = viewer.scene.primitives.add(new Cesium.Cesium3DTileset({
+            url: "https://daten-hamburg.de/gdi3d/datasource-data/LoD3_untexturiert_Area4/tileset.json"
+        }));
+        tileset4.maximumScreenSpaceError = 2.0;
+
+        tileset4.readyPromise.then(function (loadedTileset4) {
+            viewer.flyTo(loadedTileset4);
+
+            // Height offset if needed; here set to 0
+            applyHeightOffset(loadedTileset4, 0.0);
+
+            loadedTileset4.debugWireframe = false;
+
+        }).otherwise(function (error) {
+            console.error('An error occurred with LoD3_untexturiert_Area4:', error);
+        });
+    </script>
+</body>
+</html>
