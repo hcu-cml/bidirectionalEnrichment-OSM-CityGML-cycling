@@ -36,7 +36,7 @@ flowchart TD
     B --> D[Network Clipper: valid_sequences, clipped_networks]
     C --> D
 
-    D --> E[HMM Map Matcher (KDE): matched_sequences_with_attributes]
+    D --> E[HMM Map Matcher: matched_sequences_with_attributes]
     E --> G[Network Enricher: enriched_network.gpkg]
     G --> H[Safety Score Calculator: enriched_network_with_dual_scores.gpkg]
 ```
