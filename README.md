@@ -89,9 +89,9 @@ python main.py
 Final output:
 - `enriched_network_with_dual_scores.gpkg`: GeoPackage containing the final scored cycling network.
 
-## cesium_3d_visualization
+## cesium_3d_visualisation
 
-This part visualizes enriched CityGML data, combining 3D city models with bicycle infrastructure scores in an interactive CesiumJS viewer. The goal is to enable intuitive inspection of spatial safety information through web-based 3D visualization.
+This part visualises enriched CityGML data, combining 3D city models with bicycle infrastructure scores in an interactive CesiumJS viewer. The goal is to enable intuitive inspection of spatial safety information through web-based 3D visualization.
 
 ## Table of Contents
 
