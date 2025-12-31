@@ -153,12 +153,12 @@ Click on any tile feature of the bicycle infrastructure to view its properties i
 ### <u> Cite </u>
 
 <pre><code>@Article{bidirecEnrichCycling,
-AUTHOR = {},
-TITLE = {},
-JOURNAL = {},
-YEAR = {},
-PAGES = {x--x},
-DOI = {}
+AUTHOR = {Weilian Li and Jannik Matijevic and Christof Beil and Lukas Arzoumanidis and Thomas H. Kolbe and Youness Dehbi},
+TITLE = {Bidirectional enrichment of OpenStreetMap and CityGML 3.0 to facilitate cycling safety assessment},
+JOURNAL = {International Journal of Geographical Information Science},
+YEAR = {2025},
+PAGES = {1--24},
+DOI = {10.1080/13658816.2025.2595662}
 }</code></pre>
 
 ### <u> Troubleshooting </u>
